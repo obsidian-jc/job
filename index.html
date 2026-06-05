@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기계설비 기록 관리</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+:root {
+  --bg:#f5f7fa; --white:#fff; --border:#e2e8f0; --border2:#cbd5e1;
+  --blue:#2563eb; --blue-l:#eff6ff; --blue-b:#bfdbfe;
+  --green:#16a34a; --green-l:#f0fdf4; --green-b:#bbf7d0;
+  --orange:#ea580c; --orange-l:#fff7ed;
+  --red:#dc2626; --text:#0f172a; --text2:#475569; --text3:#94a3b8;
+  --header:#0f172a; --r:10px;
+  --sh:0 1px 3px rgba(0,0,0,0.08);
+  --sh-lg:0 4px 16px rgba(0,0,0,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+
+header{background:var(--header);color:#fff;padding:0 20px;height:58px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.25);}
+.hd-title{font-size:15px;font-weight:700;}
+.hd-sub{font-size:11px;color:#64748b;margin-top:1px;}
+.hd-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.ver-badge{background:#1e293b;border:1px solid #334155;border-radius:6px;padding:4px 10px;font-size:11px;font-family:'JetBrains Mono',monospace;color:#38bdf8;white-space:nowrap;}
+.hd-btn{background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;}
+.hd-btn:hover{background:#334155;color:#e2e8f0;}
+.hd-btn.green{border-color:#15803d;color:#4ade80;}
+.hd-btn.green:hover{background:#14532d;}
+
+.tabs{display:flex;background:#fff;border-bottom:2px solid var(--border);padding:0 20px;box-shadow:var(--sh);overflow-x:auto;}
+.tab{padding:12px 18px;cursor:pointer;color:var(--text3);font-size:13px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:700;}
+
+.main{padding:20px;max-width:900px;margin:0 auto;}
+.page{display:none;}.page.active{display:block;}
+
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px;box-shadow:var(--sh);}
+.card-title{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.form-row.t3{grid-template-columns:1fr 1fr 1fr;}
+.form-row.t1{grid-template-columns:1fr;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+label{font-size:12px;font-weight:600;color:var(--text2);}
+
+input,select,textarea{border:1.5px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;width:100%;transition:border-color .15s,box-shadow .15s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+textarea{resize:vertical;min-height:90px;line-height:1.6;}
+
+.btn{padding:10px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all .15s;box-shadow:var(--sh);}
+.btn-blue{background:var(--blue);color:#fff;}.btn-blue:hover{background:#1d4ed8;}
+.btn-green{background:var(--green);color:#fff;}.btn-green:hover{background:#15803d;}
+.btn-ghost{background:#fff;color:var(--text2);border:1.5px solid var(--border);}.btn-ghost:hover{background:var(--bg);}
+.btn-red{background:var(--red);color:#fff;}.btn-red:hover{background:#b91c1c;}
+.btn-edit{background:var(--blue-l);color:var(--blue);border:1.5px solid var(--blue-b);}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--border);}
+
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-blue{background:var(--blue-l);color:#1d4ed8;border:1px solid var(--blue-b);}
+.badge-orange{background:var(--orange-l);color:#c2410c;border:1px solid #fed7aa;}
+.badge-gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;}
+.badge-green{background:var(--green-l);color:#15803d;border:1px solid var(--green-b);}
+
+.docno-box{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--blue);background:var(--blue-l);border:1.5px solid var(--blue-b);padding:8px 14px;border-radius:7px;display:inline-block;}
+
+/* 폴더 경로 */
+.folder-hint{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.6;}
+.btn-folder{background:var(--blue);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.btn-folder:hover{background:#1d4ed8;}
+
+/* 목록 */
+.rec-list{display:flex;flex-direction:column;gap:10px;}
+.rec-item{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);display:flex;align-items:flex-start;gap:14px;transition:box-shadow .15s;}
+.rec-item:hover{box-shadow:var(--sh-lg);}
+.rec-left{flex:1;min-width:0;}
+.rec-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.rec-docno{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);background:var(--blue-l);padding:2px 8px;border-radius:4px;font-weight:600;}
+.rec-date{font-size:12px;color:var(--text3);}
+.rec-meta{font-size:12px;color:var(--text2);margin-top:3px;}
+.rec-content{font-size:13px;color:var(--text);line-height:1.5;margin-top:4px;}
+.rec-folder{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--blue);background:var(--blue-l);padding:3px 8px;border-radius:4px;margin-top:6px;display:inline-block;cursor:pointer;border:1px solid var(--blue-b);}
+.rec-folder:hover{background:#dbeafe;}
+.rec-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+
+.search-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;background:#fff;padding:12px 14px;border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);align-items:center;}
+.search-bar input{flex:1;min-width:180px;}
+.search-bar select{max-width:130px;}
+
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.stat-box{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh);border-top:3px solid var(--border);text-align:center;}
+.stat-box.blue{border-top-color:var(--blue);}
+.stat-box.green{border-top-color:var(--green);}
+.stat-box.orange{border-top-color:var(--orange);}
+.stat-num{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.stat-lbl{font-size:12px;color:var(--text3);margin-top:4px;}
+
+/* 설정 태그 */
+.tag-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;min-height:28px;}
+.tag{display:inline-flex;align-items:center;gap:4px;background:var(--blue-l);color:#1d4ed8;border:1px solid var(--blue-b);border-radius:20px;padding:3px 10px 3px 12px;font-size:12px;font-weight:600;}
+.tag span.editable{cursor:pointer;}
+.tag button{background:none;border:none;color:#93c5fd;cursor:pointer;font-size:14px;padding:0;line-height:1;}
+.tag button:hover{color:var(--red);}
+.set-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.set-row input{flex:1;min-width:120px;}
+
+/* JSON 패널 */
+.json-info{background:#f0fdf4;border:1px solid var(--green-b);border-radius:8px;padding:14px 16px;font-size:13px;color:#15803d;line-height:1.8;}
+.json-info b{color:#14532d;}
+.json-drop{border:2px dashed var(--green-b);border-radius:8px;padding:24px;text-align:center;background:var(--green-l);cursor:pointer;transition:all .15s;margin-top:12px;}
+.json-drop:hover{border-color:var(--green);background:#dcfce7;}
+.json-drop.drag{border-color:var(--green);background:#dcfce7;}
+
+/* 모달 */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:14px;padding:24px;width:92%;max-width:680px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.modal-close{margin-left:auto;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);}
+
+.save-guide{background:var(--green-l);border:1px solid var(--green-b);border-radius:8px;padding:12px 14px;font-size:12px;color:#15803d;margin-top:12px;line-height:1.7;}
+
+/* 업체 카드 */
+.vendor-card{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;}
+.vendor-name{font-weight:600;font-size:13px;}
+.vendor-tel{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);margin-top:2px;}
+
+@media(max-width:600px){
+  .form-row,.form-row.t3{grid-template-columns:1fr;}
+  .stat-row{grid-template-columns:1fr;}
+  .hd-right{gap:4px;}
+  .ver-badge{display:none;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:22px">🏢</span>
+  <div>
+    <div class="hd-title">기계설비 기록 관리</div>
+    <div class="hd-sub">점검 · 수리 이력 관리</div>
+  </div>
+  <div class="hd-right">
+    <div class="ver-badge" id="ver-badge">데이터 없음</div>
+    <button class="hd-btn green" onclick="saveJSON()" title="JSON 저장">💾 JSON 저장</button>
+    <button class="hd-btn" onclick="document.getElementById('json-load-input').click()" title="JSON 불러오기">📂 불러오기</button>
+    <input type="file" id="json-load-input" accept=".json" style="display:none" onchange="loadJSONFile(this)">
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPage('write',this)">✏️ 기록 작성</div>
+  <div class="tab" onclick="showPage('list',this)">📋 전체 목록</div>
+  <div class="tab" onclick="showPage('settings',this)">⚙️ 항목 설정</div>
+  <div class="tab" onclick="showPage('jsonmgr',this)">🗄️ 데이터 관리</div>
+</div>
+
+<div class="main">
+
+  <!-- ══ 기록 작성 ══ -->
+  <div class="page active" id="page-write">
+    <div class="card">
+      <div class="card-title">✏️ 기록 작성</div>
+      <div class="form-row t3">
+        <div class="fg">
+          <label>문서번호 (자동)</label>
+          <div class="docno-box" id="docno-preview">-</div>
+        </div>
+        <div class="fg">
+          <label>날짜 *</label>
+          <input type="date" id="w-date" onchange="updateDocno()">
+        </div>
+        <div class="fg">
+          <label>구분 *</label>
+          <select id="w-type" onchange="updateDocno()">
+            <option value="점검">점검</option>
+            <option value="수리">수리</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row t3">
+        <div class="fg">
+          <label>층</label>
+          <select id="w-floor"><option value="">선택</option></select>
+        </div>
+        <div class="fg">
+          <label>구역</label>
+          <select id="w-room"><option value="">선택</option></select>
+        </div>
+        <div class="fg">
+          <label>장비명 *</label>
+          <input type="text" id="w-equip" placeholder="예: HX-1" list="equip-dl">
+          <datalist id="equip-dl"></datalist>
+        </div>
+      </div>
+      <div class="form-row t3">
+        <div class="fg">
+          <label>작업자</label>
+          <input type="text" id="w-worker" placeholder="이름">
+        </div>
+        <div class="fg">
+          <label>업체명</label>
+          <input type="text" id="w-vendor" placeholder="업체명" list="vendor-dl" oninput="autoFillVendor()">
+          <datalist id="vendor-dl"></datalist>
+        </div>
+        <div class="fg">
+          <label>전화번호</label>
+          <input type="tel" id="w-tel" placeholder="010-0000-0000">
+        </div>
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label>작업내용 *</label>
+        <textarea id="w-content" placeholder="점검 또는 수리한 내용을 입력하세요"></textarea>
+      </div>
+      <div class="fg" style="margin-bottom:16px">
+        <label>특이사항</label>
+        <textarea id="w-note" placeholder="특이사항이 있으면 입력하세요" style="min-height:60px"></textarea>
+      </div>
+      <div class="fg">
+        <label>📁 사진 폴더 경로</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="w-folder" placeholder="예: E:\기계설비\사진\2025-06-05_HX-1" style="font-family:'JetBrains Mono',monospace;font-size:12px;">
+          <button class="btn-folder" onclick="pasteFolder()">📋 붙여넣기</button>
+        </div>
+        <div class="folder-hint">
+          탐색기에서 사진 폴더 열기 → 주소창 클릭 → Ctrl+A → Ctrl+C → 위 칸에 Ctrl+V
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-blue" onclick="saveRecord()">💾 저장 (txt)</button>
+        <button class="btn btn-ghost" onclick="clearForm()">↺ 초기화</button>
+      </div>
+      <div class="save-guide" id="save-guide" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- ══ 전체 목록 ══ -->
+  <div class="page" id="page-list">
+    <div class="stat-row" id="stats"></div>
+    <div class="search-bar">
+      <input type="text" id="s-text" placeholder="🔍  장비명, 내용, 문서번호, 업체 검색..." oninput="renderList()">
+      <select id="s-type" onchange="renderList()">
+        <option value="">전체 구분</option>
+        <option value="점검">점검</option>
+        <option value="수리">수리</option>
+      </select>
+      <select id="s-floor" onchange="renderList()">
+        <option value="">전체 층</option>
+      </select>
+    </div>
+    <div class="rec-list" id="rec-list">
+      <div style="text-align:center;padding:40px;color:var(--text3)">아직 기록이 없습니다</div>
+    </div>
+  </div>
+
+  <!-- ══ 항목 설정 ══ -->
+  <div class="page" id="page-settings">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-title">🏗️ 층 관리</div>
+        <div class="set-row">
+          <input type="text" id="add-floor" placeholder="새 층 추가">
+          <button class="btn btn-blue btn-sm" onclick="addOpt('floors','add-floor')">+ 추가</button>
+        </div>
+        <div class="tag-wrap" id="floor-tags"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🚪 구역 관리</div>
+        <div class="set-row">
+          <input type="text" id="add-room" placeholder="새 구역 추가">
+          <button class="btn btn-blue btn-sm" onclick="addOpt('rooms','add-room')">+ 추가</button>
+        </div>
+        <div class="tag-wrap" id="room-tags"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ 장비 관리</div>
+        <div class="set-row">
+          <input type="text" id="add-equip" placeholder="새 장비 추가">
+          <button class="btn btn-blue btn-sm" onclick="addOpt('equips','add-equip')">+ 추가</button>
+        </div>
+        <div class="tag-wrap" id="equip-tags"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">👥 업체·담당자 관리</div>
+        <div class="set-row">
+          <input type="text" id="add-vname" placeholder="업체명" style="flex:1.2">
+          <input type="tel" id="add-vtel" placeholder="전화번호">
+          <button class="btn btn-blue btn-sm" onclick="addVendor()">+ 추가</button>
+        </div>
+        <div id="vendor-cards"></div>
+      </div>
+    </div>
+    <div style="text-align:right;margin-top:4px">
+      <button class="btn btn-green btn-sm" onclick="saveJSON()">💾 변경사항 JSON 저장</button>
+    </div>
+  </div>
+
+  <!-- ══ 데이터 관리 ══ -->
+  <div class="page" id="page-jsonmgr">
+    <div class="card">
+      <div class="card-title">🗄️ JSON 데이터 관리</div>
+      <div class="json-info" id="json-status">
+        데이터를 불러오면 현재 상태가 표시됩니다.
+      </div>
+
+      <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="card" style="margin-bottom:0;background:#f8fafc">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">💾 JSON 저장</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6">
+            현재 모든 데이터(기록목록·장비·업체·층·구역)를<br>
+            JSON 파일로 저장합니다.<br>
+            앱과 같은 폴더에 보관하세요.
+          </div>
+          <button class="btn btn-green" onclick="saveJSON()" style="width:100%">💾 JSON 저장하기</button>
+        </div>
+        <div class="card" style="margin-bottom:0;background:#f8fafc">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">📂 JSON 불러오기</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6">
+            저장해둔 JSON 파일을 선택하면<br>
+            모든 데이터가 복원됩니다.<br>
+            앱을 열 때마다 불러오세요.
+          </div>
+          <button class="btn btn-blue" onclick="document.getElementById('json-load-input').click()" style="width:100%">📂 JSON 불러오기</button>
+        </div>
+      </div>
+
+      <div class="json-drop" id="json-drop"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="dropJSON(event)"
+        onclick="document.getElementById('json-load-input').click()">
+        <div style="font-size:28px;margin-bottom:8px">📄</div>
+        <div style="font-size:13px;font-weight:600;color:#15803d">JSON 파일을 여기로 드래그하거나 클릭해서 선택</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">기계설비_데이터_YYYYMMDD.json</div>
+      </div>
+
+      <div style="margin-top:16px;padding:14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e;line-height:1.7">
+        💡 <b>사용 방법</b><br>
+        ① 앱 열 때 → 📂 불러오기 클릭 → JSON 선택<br>
+        ② 작업 후 → 💾 JSON 저장 클릭 → 같은 폴더에 덮어쓰기<br>
+        ③ 항목 수정 후에도 반드시 JSON 저장!
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 수정 모달 -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ 기록 수정 <button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div id="modal-body"></div>
+    <div class="btn-row">
+      <button class="btn btn-blue" onclick="saveEdit()">💾 저장</button>
+      <button class="btn btn-ghost" onclick="closeModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// 데이터 구조
+// ══════════════════════════════════════════
+let data = {
+  version:  '',   // 마지막 저장 날짜시간
+  records:  [],   // 기록 목록
+  floors:   ['지하4층','지하3층','지하2층','지하1층','1층','옥상','열교환기실','펌프실'],
+  rooms:    ['열교환기실','저수조실-1','저수조실-2','펌프실','지하기계실','발전기실','전기실','변전실','전공조실','주차장'],
+  equips:   [
+    'HX-1','HX-2','HX-3','HX-4','HX-5','HX-6','HX-7','HX-8','HX-9','HX-10','HX-11','HX-12','HX-13','HX-14',
+    'T-1','T-2',
+    'P-1','P-2','P-3','P-4','P-5','P-6','P-7','P-8','P-9','P-10','P-11','P-12','P-13','P-14',
+    'P-15','P-16','P-17','P-18','P-19','P-20','P-21','P-22','P-23','P-24','P-25','P-26','P-27','P-28','P-29','P-30','P-31','P-32',
+    'AS-1','AS-2','AS-3','AS-4','AS-5','AS-6','AS-7','AS-8','AS-9','AS-10','AS-11','AS-12','AS-13','AS-14',
+    'SF-1','SF-2','SF-3','SF-4','SF-5','SF-6','SF-7','SF-8','SF-9','SF-10','SF-11','SF-12','SF-13','SF-14',
+    'SF-15','SF-16','SF-17','SF-18','SF-19','SF-20','SF-21','SF-22','SF-23','SF-24','SF-25','SF-25-1','SF-26'
+  ],
+  vendors: [],  // [{name, tel}]
+};
+
+let editId = null;
+
+// ══════════════════════════════════════════
+// JSON 저장 / 불러오기
+// ══════════════════════════════════════════
+function nowStr() {
+  return new Date().toLocaleString('ko-KR', {
+    year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', second:'2-digit'
+  });
+}
+
+function saveJSON() {
+  data.version = nowStr();
+  const json = JSON.stringify(data, null, 2);
+  const date  = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  const fname = `기계설비_데이터_${date}.json`;
+  const blob  = new Blob([json], { type:'application/json;charset=utf-8' });
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
+  a.href = url; a.download = fname; a.click();
+  URL.revokeObjectURL(url);
+  updateVerBadge();
+  updateJSONStatus();
+  showToast(`💾 저장됨: ${fname}`);
+}
+
+function loadJSONFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const loaded = JSON.parse(e.target.result);
+      // 필드 병합 (없는 필드는 기본값 유지)
+      if (loaded.records)  data.records  = loaded.records;
+      if (loaded.floors)   data.floors   = loaded.floors;
+      if (loaded.rooms)    data.rooms    = loaded.rooms;
+      if (loaded.equips)   data.equips   = loaded.equips;
+      if (loaded.vendors)  data.vendors  = loaded.vendors;
+      if (loaded.version)  data.version  = loaded.version;
+      updateVerBadge();
+      updateJSONStatus();
+      fillSelects();
+      fillFloorFilter();
+      renderSettings();
+      renderStats();
+      renderList();
+      showToast(`✅ 불러오기 완료! (버전: ${data.version||'-'})`);
+    } catch(e) {
+      alert('JSON 파일을 읽는 중 오류가 발생했습니다.');
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+  input.value = '';
+}
+
+function dropJSON(e) {
+  e.preventDefault();
+  document.getElementById('json-drop').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.name.endsWith('.json')) return alert('JSON 파일만 가능합니다.');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const loaded = JSON.parse(ev.target.result);
+      if (loaded.records)  data.records  = loaded.records;
+      if (loaded.floors)   data.floors   = loaded.floors;
+      if (loaded.rooms)    data.rooms    = loaded.rooms;
+      if (loaded.equips)   data.equips   = loaded.equips;
+      if (loaded.vendors)  data.vendors  = loaded.vendors;
+      if (loaded.version)  data.version  = loaded.version;
+      updateVerBadge();
+      updateJSONStatus();
+      fillSelects(); fillFloorFilter(); renderSettings();
+      renderStats(); renderList();
+      showToast(`✅ 불러오기 완료! (버전: ${data.version||'-'})`);
+    } catch(e) { alert('JSON 파일 오류'); }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// 앱 종료 시 자동 저장 안내
+window.addEventListener('beforeunload', e => {
+  // 자동 저장 (localStorage 백업)
+  try { localStorage.setItem('maint_backup', JSON.stringify(data)); } catch(err) {}
+});
+
+// 시작 시 localStorage 백업 복원 시도
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const backup = localStorage.getItem('maint_backup');
+    if (backup) {
+      const parsed = JSON.parse(backup);
+      if (parsed.records?.length || parsed.vendors?.length) {
+        data = { ...data, ...parsed };
+        updateVerBadge();
+        updateJSONStatus();
+        fillSelects();
+        renderSettings();
+      }
+    }
+  } catch(e) {}
+});
+
+function updateVerBadge() {
+  const el = document.getElementById('ver-badge');
+  el.textContent = data.version ? `v. ${data.version}` : '데이터 없음';
+}
+
+function updateJSONStatus() {
+  document.getElementById('json-status').innerHTML = `
+    <b>현재 데이터 상태</b><br>
+    📅 마지막 저장: <b>${data.version || '저장된 적 없음'}</b><br>
+    📋 기록 수: <b>${data.records.length}건</b>
+    &nbsp;(점검 ${data.records.filter(r=>r.type==='점검').length}건 / 수리 ${data.records.filter(r=>r.type==='수리').length}건)<br>
+    ⚙️ 장비: <b>${data.equips.length}개</b> &nbsp;
+    👥 업체: <b>${data.vendors.length}개</b> &nbsp;
+    🏗️ 층: <b>${data.floors.length}개</b> &nbsp;
+    🚪 구역: <b>${data.rooms.length}개</b>
+  `;
+}
+
+function showToast(msg) {
+  const old = document.getElementById('_toast');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.id = '_toast';
+  Object.assign(t.style, {
+    position:'fixed', top:'68px', left:'50%', transform:'translateX(-50%)',
+    background:'#0f172a', color:'#f8fafc', padding:'12px 20px',
+    borderRadius:'10px', boxShadow:'0 8px 24px rgba(0,0,0,0.3)',
+    zIndex:'9999', fontSize:'13px', fontFamily:"'Noto Sans KR',sans-serif",
+    whiteSpace:'nowrap'
+  });
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { if(t.parentElement) t.remove(); }, 3000);
+}
+
+// ══════════════════════════════════════════
+// 탭
+// ══════════════════════════════════════════
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  if(name==='list')     { renderStats(); renderList(); fillFloorFilter(); }
+  if(name==='settings') renderSettings();
+  if(name==='write')    { fillSelects(); updateDocno(); }
+  if(name==='jsonmgr')  updateJSONStatus();
+}
+
+// ══════════════════════════════════════════
+// 문서번호
+// ══════════════════════════════════════════
+function updateDocno() {
+  const date   = document.getElementById('w-date').value || new Date().toISOString().slice(0,10);
+  const type   = document.getElementById('w-type').value;
+  const prefix = type==='점검' ? 'INS' : 'REP';
+  const ds     = date.replace(/-/g,'');
+  const cnt    = data.records.filter(r=>r.date===date && r.type===type).length;
+  const seq    = String(cnt+1).padStart(3,'0');
+  const docno  = `${prefix}-${ds}-${seq}`;
+  document.getElementById('docno-preview').textContent = docno;
+  return docno;
+}
+
+// ══════════════════════════════════════════
+// Select 채우기
+// ══════════════════════════════════════════
+function fillSelects() {
+  const fs = document.getElementById('w-floor');
+  const cur = fs.value;
+  fs.innerHTML = '<option value="">선택</option>'+data.floors.map(v=>`<option${v===cur?' selected':''}>${v}</option>`).join('');
+  const rs = document.getElementById('w-room');
+  const cur2 = rs.value;
+  rs.innerHTML = '<option value="">선택</option>'+data.rooms.map(v=>`<option${v===cur2?' selected':''}>${v}</option>`).join('');
+  document.getElementById('equip-dl').innerHTML  = data.equips.map(v=>`<option value="${v}">`).join('');
+  document.getElementById('vendor-dl').innerHTML = data.vendors.map(v=>`<option value="${v.name||v}">`).join('');
+}
+
+function fillFloorFilter() {
+  const sf = document.getElementById('s-floor');
+  const cur = sf.value;
+  sf.innerHTML = '<option value="">전체 층</option>'+data.floors.map(v=>`<option${v===cur?' selected':''}>${v}</option>`).join('');
+}
+
+// 업체명 선택시 전화번호 자동입력
+function autoFillVendor() {
+  const name  = document.getElementById('w-vendor').value;
+  const found = data.vendors.find(v=>(v.name||v)===name);
+  if (found?.tel) document.getElementById('w-tel').value = found.tel;
+}
+
+// ══════════════════════════════════════════
+// 폴더 경로 붙여넣기
+// ══════════════════════════════════════════
+async function pasteFolder() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text.trim()) document.getElementById('w-folder').value = text.trim();
+    else alert('클립보드가 비어있습니다.\n탐색기 주소창에서 Ctrl+C로 경로를 먼저 복사해주세요.');
+  } catch(e) {
+    alert('직접 입력칸에 Ctrl+V 해주세요.');
+  }
+}
+
+// ══════════════════════════════════════════
+// 기록 저장
+// ══════════════════════════════════════════
+function gv(id) { return document.getElementById(id)?.value||''; }
+
+function saveRecord() {
+  const date    = gv('w-date');
+  const equip   = gv('w-equip');
+  const content = gv('w-content');
+  if(!date)    return alert('날짜를 입력하세요.');
+  if(!equip)   return alert('장비명을 입력하세요.');
+  if(!content) return alert('작업내용을 입력하세요.');
+
+  const docno   = updateDocno();
+  const type    = gv('w-type');
+  const floor   = gv('w-floor');
+  const room    = gv('w-room');
+  const worker  = gv('w-worker');
+  const vendor  = gv('w-vendor');
+  const tel     = gv('w-tel');
+  const note    = gv('w-note');
+  const folder  = gv('w-folder');
+  const created = nowStr();
+
+  const r = { id:Date.now(), docno, date, type, floor, room, equip, worker, vendor, tel, content, note, folderName:folder, created };
+
+  // txt 생성
+  const line = '='.repeat(50);
+  const txt = [
+    line, `기계설비 ${type} 기록`, line,
+    `문서번호  : ${docno}`,
+    `날짜      : ${date}`,
+    `구분      : ${type}`,
+    `층        : ${floor||'-'}`,
+    `구역      : ${room||'-'}`,
+    `장비명    : ${equip}`,
+    `작업자    : ${worker||'-'}`,
+    `업체명    : ${vendor||'-'}`,
+    `전화번호  : ${tel||'-'}`,
+    line,
+    `[작업내용]`, content,
+    line,
+    `[특이사항]`, note||'해당없음',
+    line,
+    folder ? `[사진 폴더]\n${folder}\n(탐색기 주소창에 위 경로 붙여넣기)` : '[사진 폴더]\n없음',
+    line,
+    `작성일시  : ${created}`,
+    line,
+  ].join('\n');
+
+  const fileName = `${docno}_${floor||''}_${equip}_${type}.txt`;
+  const blob = new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download=fileName; a.click();
+  URL.revokeObjectURL(url);
+
+  // 데이터에 추가
+  data.records.unshift(r);
+  // localStorage 백업
+  try { localStorage.setItem('maint_backup', JSON.stringify(data)); } catch(e){}
+
+  document.getElementById('save-guide').style.display = 'block';
+  document.getElementById('save-guide').innerHTML =
+    `✅ <b>${fileName}</b> 저장 완료!<br>
+     기록이 목록에 추가되었습니다. 작업 후 <b>💾 JSON 저장</b>을 눌러 데이터를 보관하세요.`;
+
+  clearForm();
+  updateDocno();
+  updateJSONStatus();
+}
+
+function clearForm() {
+  ['w-floor','w-room','w-equip','w-worker','w-vendor','w-tel','w-content','w-note','w-folder'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+}
+
+// ══════════════════════════════════════════
+// 목록
+// ══════════════════════════════════════════
+function renderStats() {
+  const total = data.records.length;
+  const c   = data.records.filter(r=>r.type==='점검').length;
+  const rep = data.records.filter(r=>r.type==='수리').length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-box blue"><div class="stat-num">${total}</div><div class="stat-lbl">전체 기록</div></div>
+    <div class="stat-box green"><div class="stat-num">${c}</div><div class="stat-lbl">📋 점검</div></div>
+    <div class="stat-box orange"><div class="stat-num">${rep}</div><div class="stat-lbl">🔧 수리</div></div>
+  `;
+}
+
+function renderList() {
+  const text  = (document.getElementById('s-text')?.value||'').toLowerCase();
+  const type  = document.getElementById('s-type')?.value||'';
+  const floor = document.getElementById('s-floor')?.value||'';
+  let list = [...data.records];
+  if(type)  list = list.filter(r=>r.type===type);
+  if(floor) list = list.filter(r=>r.floor===floor);
+  if(text)  list = list.filter(r=>JSON.stringify(r).toLowerCase().includes(text));
+
+  const el = document.getElementById('rec-list');
+  if(!list.length) {
+    el.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3)">검색 결과가 없습니다</div>`;
+    return;
+  }
+  el.innerHTML = list.map(r=>{
+    const badge = r.type==='점검'
+      ? '<span class="badge badge-blue">📋 점검</span>'
+      : '<span class="badge badge-orange">🔧 수리</span>';
+    const folderBtn = r.folderName
+      ? `<div class="rec-folder" onclick="copyFolder('${r.folderName.replace(/'/g,"\\'")}')">📁 ${r.folderName}</div>`
+      : '';
+    const meta = [r.equip, r.worker, r.vendor, r.tel ? '📞'+r.tel : ''].filter(Boolean).join(' · ');
+    return `
+    <div class="rec-item">
+      <div class="rec-left">
+        <div class="rec-top">
+          ${badge}
+          <span class="rec-docno">${r.docno}</span>
+          <span class="rec-date">${r.date}</span>
+          ${r.floor?`<span class="badge badge-gray">${r.floor}</span>`:''}
+          ${r.room?`<span class="badge badge-gray">${r.room}</span>`:''}
+        </div>
+        <div class="rec-meta">${meta}</div>
+        <div class="rec-content">${(r.content||'').slice(0,120)}${(r.content||'').length>120?'…':''}</div>
+        ${folderBtn}
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">작성: ${r.created||r.date}</div>
+      </div>
+      <div class="rec-actions">
+        <button class="btn btn-edit btn-sm" onclick="openEdit(${r.id})">✏️ 수정</button>
+        <button class="btn btn-ghost btn-sm" onclick="reSaveTxt(${r.id})">📄 txt</button>
+        <button class="btn btn-red btn-sm" onclick="delRecord(${r.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function copyFolder(path) {
+  try { navigator.clipboard.writeText(path); } catch(e){}
+  showToast('📋 경로 복사됨 — 탐색기 주소창에 Ctrl+V');
+}
+
+function delRecord(id) {
+  if(!confirm('삭제하시겠습니까?')) return;
+  data.records = data.records.filter(r=>r.id!==id);
+  try { localStorage.setItem('maint_backup', JSON.stringify(data)); } catch(e){}
+  renderStats(); renderList(); updateJSONStatus();
+}
+
+// txt 재저장
+function reSaveTxt(id) {
+  const r = data.records.find(x=>x.id===id);
+  if(!r) return;
+  const line = '='.repeat(50);
+  const txt = [
+    line, `기계설비 ${r.type} 기록`, line,
+    `문서번호  : ${r.docno}`, `날짜      : ${r.date}`, `구분      : ${r.type}`,
+    `층        : ${r.floor||'-'}`, `구역      : ${r.room||'-'}`, `장비명    : ${r.equip}`,
+    `작업자    : ${r.worker||'-'}`, `업체명    : ${r.vendor||'-'}`, `전화번호  : ${r.tel||'-'}`,
+    line, `[작업내용]`, r.content,
+    line, `[특이사항]`, r.note||'해당없음',
+    line, r.folderName?`[사진 폴더]\n${r.folderName}`:'[사진 폴더]\n없음',
+    line, `작성일시  : ${r.created||r.date}`, line,
+  ].join('\n');
+  const fn = `${r.docno}_${r.floor||''}_${r.equip}_${r.type}.txt`;
+  const blob = new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=fn; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════
+// 수정 모달
+// ══════════════════════════════════════════
+function openEdit(id) {
+  const r = data.records.find(x=>x.id===id);
+  if(!r) return;
+  editId = id;
+  const fOpts = '<option value="">선택</option>'+data.floors.map(v=>`<option${v===r.floor?' selected':''}>${v}</option>`).join('');
+  const rOpts = '<option value="">선택</option>'+data.rooms.map(v=>`<option${v===r.room?' selected':''}>${v}</option>`).join('');
+  const tOpts = ['점검','수리'].map(v=>`<option${v===r.type?' selected':''}>${v}</option>`).join('');
+  const esc = s=>(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-row t3">
+      <div class="fg"><label>날짜</label><input type="date" id="m-date" value="${r.date}"></div>
+      <div class="fg"><label>구분</label><select id="m-type">${tOpts}</select></div>
+      <div class="fg"><label>장비명</label><input type="text" id="m-equip" value="${esc(r.equip)}" list="equip-dl"></div>
+    </div>
+    <div class="form-row t3">
+      <div class="fg"><label>층</label><select id="m-floor">${fOpts}</select></div>
+      <div class="fg"><label>구역</label><select id="m-room">${rOpts}</select></div>
+      <div class="fg"><label>작업자</label><input type="text" id="m-worker" value="${esc(r.worker)}"></div>
+    </div>
+    <div class="form-row t3">
+      <div class="fg"><label>업체명</label><input type="text" id="m-vendor" value="${esc(r.vendor)}" list="vendor-dl"></div>
+      <div class="fg"><label>전화번호</label><input type="tel" id="m-tel" value="${esc(r.tel||'')}"></div>
+      <div class="fg"></div>
+    </div>
+    <div class="fg" style="margin-bottom:10px"><label>작업내용</label><textarea id="m-content">${esc(r.content)}</textarea></div>
+    <div class="fg" style="margin-bottom:10px"><label>특이사항</label><textarea id="m-note" style="min-height:60px">${esc(r.note)}</textarea></div>
+    <div class="fg"><label>사진 폴더 경로</label><input type="text" id="m-folder" value="${esc(r.folderName||'')}" style="font-family:'JetBrains Mono',monospace;font-size:12px"></div>
+  `;
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function saveEdit() {
+  const r = data.records.find(x=>x.id===editId);
+  if(!r) return;
+  r.date       = document.getElementById('m-date')?.value    || r.date;
+  r.type       = document.getElementById('m-type')?.value    || r.type;
+  r.floor      = document.getElementById('m-floor')?.value   || '';
+  r.room       = document.getElementById('m-room')?.value    || '';
+  r.equip      = document.getElementById('m-equip')?.value   || r.equip;
+  r.worker     = document.getElementById('m-worker')?.value  || '';
+  r.vendor     = document.getElementById('m-vendor')?.value  || '';
+  r.tel        = document.getElementById('m-tel')?.value     || '';
+  r.content    = document.getElementById('m-content')?.value || '';
+  r.note       = document.getElementById('m-note')?.value    || '';
+  r.folderName = document.getElementById('m-folder')?.value  || '';
+  try { localStorage.setItem('maint_backup', JSON.stringify(data)); } catch(e){}
+  closeModal();
+  renderStats(); renderList(); updateJSONStatus();
+  showToast('✅ 수정 완료!');
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editId = null;
+}
+
+// ══════════════════════════════════════════
+// 설정 (층/구역/장비/업체)
+// ══════════════════════════════════════════
+function addOpt(key, inputId) {
+  const val = document.getElementById(inputId).value.trim();
+  if(!val) return;
+  if(data[key].includes(val)) return alert('이미 있는 항목입니다.');
+  data[key].push(val);
+  document.getElementById(inputId).value='';
+  renderSettings(); fillSelects();
+  try { localStorage.setItem('maint_backup', JSON.stringify(data)); } catch(e){}
+}
+
+function editOpt(key, oldVal) {
+  const nv = prompt(`"${oldVal}" 수정:`, oldVal);
+  if(!nv||nv.trim()===''||nv===oldVal) return;
+  const idx = data[key].indexOf(oldVal);
+  if(idx===-1) return;
+  data[key][idx] = nv.trim();
+  const fmap = {floors:'floor',rooms:'room',equips:'equip'};
+  const field = fmap[key];
+  if(field) data.records.forEach(r=>{ if(r[field]===oldVal) r[field]=nv.trim(); });
+  renderSettings(); fillSelects();
+  try { localStorage.setItem('maint_backup', JSON.stringify(data)); } catch(e){}
+}
+
+function delOpt(key, val) {
+  if(!confirm(`"${val}" 삭제?`)) return;
+  data[key].splice(data[key].indexOf(val),1);
+  renderSettings(); fillSelects();
+  try { localStorage.setItem('maint_backup', JSON.stringify(data)); } catch(e){}
+}
+
+// 업체
+function addVendor() {
+  const name = document.getElementById('add-vname').value.trim();
+  const tel  = document.getElementById('add-vtel').value.trim();
+  if(!name) return alert('업체명을 입력하세요.');
+  if(data.vendors.find(v=>(v.name||v)===name)) return alert('이미 있는 업체입니다.');
+  data.vendors.push({name, tel});
+  document.getElementById('add-vname').value='';
+  document.getElementById('add-vtel').value='';
+  renderSettings(); fillSelects();
+  try { localStorage.setItem('maint_backup', JSON.stringify(data)); } catch(e){}
+}
+
+function editVendor(name) {
+  const found = data.vendors.find(v=>(v.name||v)===name);
+  const nn = prompt('업체명 수정:', name);
+  if(!nn||!nn.trim()) return;
+  const nt = prompt('전화번호 수정:', found?.tel||'');
+  const idx = data.vendors.findIndex(v=>(v.name||v)===name);
+  data.vendors[idx] = {name:nn.trim(), tel:(nt||'').trim()};
+  data.records.forEach(r=>{ if(r.vendor===name) r.vendor=nn.trim(); });
+  renderSettings(); fillSelects();
+  try { localStorage.setItem('maint_backup', JSON.stringify(data)); } catch(e){}
+}
+
+function delVendor(name) {
+  if(!confirm(`"${name}" 삭제?`)) return;
+  data.vendors = data.vendors.filter(v=>(v.name||v)!==name);
+  renderSettings(); fillSelects();
+  try { localStorage.setItem('maint_backup', JSON.stringify(data)); } catch(e){}
+}
+
+function renderSettings() {
+  const render = (tagId, key) => {
+    document.getElementById(tagId).innerHTML = data[key].map(v=>`
+      <span class="tag">
+        <span class="editable" onclick="editOpt('${key}','${v}')" title="클릭하여 수정">✏️ ${v}</span>
+        <button onclick="delOpt('${key}','${v}')">×</button>
+      </span>`).join('');
+  };
+  render('floor-tags','floors');
+  render('room-tags','rooms');
+  render('equip-tags','equips');
+
+  document.getElementById('vendor-cards').innerHTML = data.vendors.length
+    ? data.vendors.map(v=>{
+        const name = v.name||v;
+        const tel  = v.tel||'';
+        return `
+        <div class="vendor-card">
+          <div>
+            <div class="vendor-name">🏢 ${name}</div>
+            ${tel?`<div class="vendor-tel">📞 ${tel}</div>`:'<div style="font-size:11px;color:var(--text3)">전화번호 없음</div>'}
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-edit btn-sm" onclick="editVendor('${name}')">✏️</button>
+            <button class="btn btn-red btn-sm" onclick="delVendor('${name}')">🗑️</button>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">등록된 업체가 없습니다</div>';
+}
+
+// ══════════════════════════════════════════
+// 초기화
+// ══════════════════════════════════════════
+document.getElementById('w-date').value = new Date().toISOString().slice(0,10);
+fillSelects();
+updateDocno();
+updateVerBadge();
+updateJSONStatus();
+document.getElementById('edit-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
+</script>
+</body>
+</html>
