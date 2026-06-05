@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기계설비 기록 관리</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+:root {
+  --bg:#f5f7fa; --white:#fff; --border:#e2e8f0; --border2:#cbd5e1;
+  --blue:#2563eb; --blue-l:#eff6ff; --blue-b:#bfdbfe;
+  --green:#16a34a; --green-l:#f0fdf4; --green-b:#bbf7d0;
+  --orange:#ea580c; --orange-l:#fff7ed;
+  --red:#dc2626; --text:#0f172a; --text2:#475569; --text3:#94a3b8;
+  --header:#0f172a; --r:10px;
+  --sh:0 1px 3px rgba(0,0,0,0.08); --sh-lg:0 4px 16px rgba(0,0,0,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+
+header{background:var(--header);color:#fff;padding:0 16px;height:56px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.25);}
+.hd-title{font-size:14px;font-weight:700;}
+.hd-sub{font-size:11px;color:#64748b;margin-top:1px;}
+.hd-right{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.notion-badge{background:#1e293b;border:1px solid #334155;border-radius:6px;padding:4px 10px;font-size:11px;color:#4ade80;display:flex;align-items:center;gap:4px;}
+.notion-badge.off{color:#ef4444;}
+
+.tabs{display:flex;background:#fff;border-bottom:2px solid var(--border);padding:0 16px;box-shadow:var(--sh);overflow-x:auto;}
+.tab{padding:11px 14px;cursor:pointer;color:var(--text3);font-size:13px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:700;}
+
+.main{padding:16px;max-width:860px;margin:0 auto;}
+.page{display:none;}.page.active{display:block;}
+
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--sh);}
+.card-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.form-row.t3{grid-template-columns:1fr 1fr 1fr;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+label{font-size:12px;font-weight:600;color:var(--text2);}
+
+input,select,textarea{border:1.5px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;width:100%;transition:border-color .15s,box-shadow .15s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+textarea{resize:vertical;min-height:90px;line-height:1.6;}
+
+.btn{padding:9px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all .15s;box-shadow:var(--sh);}
+.btn-blue{background:var(--blue);color:#fff;}.btn-blue:hover{background:#1d4ed8;}
+.btn-green{background:var(--green);color:#fff;}.btn-green:hover{background:#15803d;}
+.btn-orange{background:var(--orange);color:#fff;}.btn-orange:hover{background:#c2410c;}
+.btn-ghost{background:#fff;color:var(--text2);border:1.5px solid var(--border);}.btn-ghost:hover{background:var(--bg);}
+.btn-red{background:var(--red);color:#fff;}
+.btn-edit{background:var(--blue-l);color:var(--blue);border:1.5px solid var(--blue-b);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border);}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-blue{background:var(--blue-l);color:#1d4ed8;border:1px solid var(--blue-b);}
+.badge-orange{background:var(--orange-l);color:#c2410c;border:1px solid #fed7aa;}
+.badge-green{background:var(--green-l);color:#15803d;border:1px solid var(--green-b);}
+.badge-gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;}
+.badge-red{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;}
+
+.docno-box{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--blue);background:var(--blue-l);border:1.5px solid var(--blue-b);padding:7px 12px;border-radius:7px;display:inline-block;}
+
+/* 로딩 */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* 목록 */
+.rec-list{display:flex;flex-direction:column;gap:10px;}
+.rec-item{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);display:flex;align-items:flex-start;gap:12px;}
+.rec-left{flex:1;min-width:0;}
+.rec-top{display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;}
+.rec-docno{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);background:var(--blue-l);padding:2px 7px;border-radius:4px;font-weight:600;}
+.rec-date{font-size:11px;color:var(--text3);}
+.rec-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+.rec-content{font-size:13px;color:var(--text);line-height:1.5;margin-top:4px;}
+.rec-actions{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+
+.search-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;background:#fff;padding:10px 12px;border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);align-items:center;}
+.search-bar input{flex:1;min-width:160px;}
+.search-bar select{max-width:120px;}
+
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.stat-box{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);border-top:3px solid var(--border);text-align:center;}
+.stat-box.blue{border-top-color:var(--blue);}
+.stat-box.green{border-top-color:var(--green);}
+.stat-box.orange{border-top-color:var(--orange);}
+.stat-num{font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:3px;}
+
+/* 설정 태그 */
+.tag-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.tag{display:inline-flex;align-items:center;gap:4px;background:var(--blue-l);color:#1d4ed8;border:1px solid var(--blue-b);border-radius:20px;padding:3px 10px 3px 11px;font-size:12px;font-weight:600;}
+.tag span{cursor:pointer;}
+.tag button{background:none;border:none;color:#93c5fd;cursor:pointer;font-size:13px;padding:0;line-height:1;}
+.tag button:hover{color:var(--red);}
+.set-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.set-row input{flex:1;min-width:100px;}
+
+/* 업체 카드 */
+.vendor-card{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;}
+.vendor-name{font-weight:600;font-size:13px;}
+.vendor-tel{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);margin-top:2px;}
+
+/* 토스트 */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#f8fafc;padding:11px 20px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.3);z-index:9999;font-size:13px;white-space:nowrap;animation:fadeUp .2s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+
+/* 모달 */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:14px;padding:20px;width:92%;max-width:640px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+.modal-title{font-size:14px;font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.modal-close{margin-left:auto;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);}
+
+.save-guide{background:var(--green-l);border:1px solid var(--green-b);border-radius:8px;padding:11px 13px;font-size:12px;color:#15803d;margin-top:10px;line-height:1.7;}
+
+@media(max-width:600px){
+  .form-row,.form-row.t3{grid-template-columns:1fr 1fr;}
+  .stat-row{grid-template-columns:1fr 1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:20px">🏢</span>
+  <div>
+    <div class="hd-title">기계설비 기록 관리</div>
+    <div class="hd-sub">점검 · 수리 이력</div>
+  </div>
+  <div class="hd-right">
+    <div class="notion-badge off" id="notion-badge">⬤ 노션 연결중...</div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPage('write',this)">✏️ 기록 작성</div>
+  <div class="tab" onclick="showPage('list',this)">📋 목록</div>
+  <div class="tab" onclick="showPage('settings',this)">⚙️ 설정</div>
+</div>
+
+<div class="main">
+
+  <!-- ══ 기록 작성 ══ -->
+  <div class="page active" id="page-write">
+    <div class="card">
+      <div class="card-title">✏️ 기록 작성</div>
+      <div class="form-row t3">
+        <div class="fg">
+          <label>문서번호 (자동)</label>
+          <div class="docno-box" id="docno-preview">-</div>
+        </div>
+        <div class="fg">
+          <label>날짜 *</label>
+          <input type="date" id="w-date" onchange="updateDocno()">
+        </div>
+        <div class="fg">
+          <label>구분 *</label>
+          <select id="w-type" onchange="updateDocno()">
+            <option value="점검">📋 점검</option>
+            <option value="수리">🔧 수리</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row t3">
+        <div class="fg">
+          <label>층</label>
+          <select id="w-floor"><option value="">선택</option></select>
+        </div>
+        <div class="fg">
+          <label>구역</label>
+          <select id="w-room"><option value="">선택</option></select>
+        </div>
+        <div class="fg">
+          <label>장비명 *</label>
+          <input type="text" id="w-equip" placeholder="예: HX-1" list="equip-dl">
+          <datalist id="equip-dl"></datalist>
+        </div>
+      </div>
+      <div class="form-row t3">
+        <div class="fg">
+          <label>작업자</label>
+          <input type="text" id="w-worker" placeholder="이름">
+        </div>
+        <div class="fg">
+          <label>업체명</label>
+          <input type="text" id="w-vendor" placeholder="업체명" list="vendor-dl" oninput="autoFillVendor()">
+          <datalist id="vendor-dl"></datalist>
+        </div>
+        <div class="fg">
+          <label>전화번호</label>
+          <input type="tel" id="w-tel" placeholder="010-0000-0000">
+        </div>
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label>작업내용 *</label>
+        <textarea id="w-content" placeholder="점검 또는 수리한 내용을 입력하세요"></textarea>
+      </div>
+      <div class="fg">
+        <label>특이사항</label>
+        <textarea id="w-note" placeholder="특이사항 (사진은 노션에서 직접 첨부)" style="min-height:60px"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-blue" id="save-btn" onclick="saveRecord()">💾 노션에 저장</button>
+        <button class="btn btn-ghost" onclick="clearForm()">↺ 초기화</button>
+      </div>
+      <div class="save-guide" id="save-guide" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- ══ 목록 ══ -->
+  <div class="page" id="page-list">
+    <div class="stat-row" id="stats">
+      <div class="stat-box blue"><div class="stat-num">-</div><div class="stat-lbl">전체</div></div>
+      <div class="stat-box green"><div class="stat-num">-</div><div class="stat-lbl">점검</div></div>
+      <div class="stat-box orange"><div class="stat-num">-</div><div class="stat-lbl">수리</div></div>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="s-text" placeholder="🔍  장비명, 내용, 문서번호 검색..." oninput="renderList()">
+      <select id="s-type" onchange="renderList()">
+        <option value="">전체</option>
+        <option value="점검">점검</option>
+        <option value="수리">수리</option>
+      </select>
+    </div>
+    <div style="text-align:right;margin-bottom:10px">
+      <button class="btn btn-blue btn-sm" onclick="loadFromNotion()">🔄 노션에서 불러오기</button>
+    </div>
+    <div class="rec-list" id="rec-list">
+      <div style="text-align:center;padding:40px;color:var(--text3)">
+        노션에서 불러오기 버튼을 눌러주세요
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 설정 ══ -->
+  <div class="page" id="page-settings">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card">
+        <div class="card-title">🏗️ 층 관리</div>
+        <div class="set-row">
+          <input type="text" id="add-floor" placeholder="새 층">
+          <button class="btn btn-blue btn-sm" onclick="addOpt('floors','add-floor')">+ 추가</button>
+        </div>
+        <div class="tag-wrap" id="floor-tags"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🚪 구역 관리</div>
+        <div class="set-row">
+          <input type="text" id="add-room" placeholder="새 구역">
+          <button class="btn btn-blue btn-sm" onclick="addOpt('rooms','add-room')">+ 추가</button>
+        </div>
+        <div class="tag-wrap" id="room-tags"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ 장비 관리</div>
+        <div class="set-row">
+          <input type="text" id="add-equip" placeholder="새 장비">
+          <button class="btn btn-blue btn-sm" onclick="addOpt('equips','add-equip')">+ 추가</button>
+        </div>
+        <div class="tag-wrap" id="equip-tags"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">👥 업체 관리</div>
+        <div class="set-row">
+          <input type="text" id="add-vname" placeholder="업체명">
+          <input type="tel" id="add-vtel" placeholder="전화번호">
+          <button class="btn btn-blue btn-sm" onclick="addVendor()">+ 추가</button>
+        </div>
+        <div id="vendor-cards"></div>
+      </div>
+    </div>
+    <div style="text-align:right;margin-top:4px">
+      <button class="btn btn-green btn-sm" onclick="saveSettings()">💾 설정 저장</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 수정 모달 -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ 기록 수정 <button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div id="modal-body"></div>
+    <div class="btn-row">
+      <button class="btn btn-blue" onclick="saveEdit()">💾 노션 업데이트</button>
+      <button class="btn btn-ghost" onclick="closeModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════
+// 노션 API 설정
+// ══════════════════════════════
+const NOTION_TOKEN  = "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";
+const NOTION_PROXY  = "https://api.notion.com/v1";
+// 노션 API는 CORS 문제로 직접 호출 불가 → Cloudflare Worker 프록시 사용
+// 아래 WORKER_URL은 배포 후 업데이트 필요
+const WORKER_URL    = "https://young-limit-dd53.idleejc.workers.dev";
+
+// DB ID (스크립트 실행 후 채워야 함)
+let REPAIR_DB_ID = '37669164-a5ee-8180-8ce8-e57854187f22';
+let CHECK_DB_ID  = '37669164-a5ee-810c-acf4-de6139445513';
+
+// ── 로컬 설정 데이터 ──
+let cfg = JSON.parse(localStorage.getItem('cfg') || 'null') || {
+  floors:  ['지하4층','지하3층','지하2층','지하1층','1층','옥상','열교환기실','펌프실'],
+  rooms:   ['열교환기실','저수조실-1','저수조실-2','펌프실','지하기계실','발전기실','전기실','변전실','전공조실','주차장'],
+  equips:  ['HX-1','HX-2','HX-3','HX-4','HX-5','HX-6','HX-7','HX-8','HX-9','HX-10','HX-11','HX-12','HX-13','HX-14','T-1','T-2','P-1','P-2','P-3','P-4','P-5','P-6','P-7','P-8','P-9','P-10','P-11','P-12','P-13','P-14','P-15','P-16','P-17','P-18','P-19','P-20','P-21','P-22','P-23','P-24','P-25','P-26','P-27','P-28','P-29','P-30','P-31','P-32','AS-1','AS-2','AS-3','AS-4','AS-5','AS-6','AS-7','AS-8','AS-9','AS-10','AS-11','AS-12','AS-13','AS-14','SF-1','SF-2','SF-3','SF-4','SF-5','SF-6','SF-7','SF-8','SF-9','SF-10','SF-11','SF-12','SF-13','SF-14','SF-15','SF-16','SF-17','SF-18','SF-19','SF-20','SF-21','SF-22','SF-23','SF-24','SF-25','SF-25-1','SF-26'],
+  vendors: [],
+};
+
+let localRecords = JSON.parse(localStorage.getItem('local_records') || '[]');
+let editPageId   = null;
+
+// ══════════════════════════════
+// 노션 API 호출 (Cloudflare Worker 경유)
+// ══════════════════════════════
+async function notionAPI(method, path, body) {
+  try {
+    const res = await fetch(`${WORKER_URL}${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-notion-token': NOTION_TOKEN,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+    return await res.json();
+  } catch(e) {
+    // Worker 없으면 직접 시도 (로컬 테스트용)
+    try {
+      const res2 = await fetch(`https://api.notion.com/v1${path}`, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${NOTION_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28',
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      return await res2.json();
+    } catch(e2) {
+      throw e2;
+    }
+  }
+}
+
+// 노션 연결 상태 확인
+async function checkNotion() {
+  const badge = document.getElementById('notion-badge');
+  try {
+    // DB ID가 없으면 설정 페이지 안내
+    if (!REPAIR_DB_ID || !CHECK_DB_ID) {
+      badge.textContent = '⬤ DB ID 설정 필요';
+      badge.className = 'notion-badge off';
+      return;
+    }
+    badge.textContent = '⬤ 노션 연결됨';
+    badge.className = 'notion-badge';
+  } catch(e) {
+    badge.textContent = '⬤ 연결 실패';
+    badge.className = 'notion-badge off';
+  }
+}
+
+// ══════════════════════════════
+// 탭
+// ══════════════════════════════
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  if(name==='list')     { renderList(); }
+  if(name==='settings') renderSettings();
+  if(name==='write')    { fillSelects(); updateDocno(); }
+}
+
+// ══════════════════════════════
+// 문서번호
+// ══════════════════════════════
+function updateDocno() {
+  const date   = document.getElementById('w-date').value || new Date().toISOString().slice(0,10);
+  const type   = document.getElementById('w-type').value;
+  const prefix = type==='점검' ? 'INS' : 'REP';
+  const ds     = date.replace(/-/g,'');
+  const cnt    = localRecords.filter(r=>r.date===date && r.type===type).length;
+  const seq    = String(cnt+1).padStart(3,'0');
+  const docno  = `${prefix}-${ds}-${seq}`;
+  document.getElementById('docno-preview').textContent = docno;
+  return docno;
+}
+
+// ══════════════════════════════
+// Select 채우기
+// ══════════════════════════════
+function fillSelects() {
+  const fs = document.getElementById('w-floor');
+  const cur = fs.value;
+  fs.innerHTML = '<option value="">선택</option>'+cfg.floors.map(v=>`<option${v===cur?' selected':''}>${v}</option>`).join('');
+  const rs = document.getElementById('w-room');
+  const cur2 = rs.value;
+  rs.innerHTML = '<option value="">선택</option>'+cfg.rooms.map(v=>`<option${v===cur2?' selected':''}>${v}</option>`).join('');
+  document.getElementById('equip-dl').innerHTML  = cfg.equips.map(v=>`<option value="${v}">`).join('');
+  document.getElementById('vendor-dl').innerHTML = cfg.vendors.map(v=>`<option value="${v.name||v}">`).join('');
+}
+
+function autoFillVendor() {
+  const name  = document.getElementById('w-vendor').value;
+  const found = cfg.vendors.find(v=>(v.name||v)===name);
+  if(found?.tel) document.getElementById('w-tel').value = found.tel;
+}
+
+// ══════════════════════════════
+// 노션에 저장
+// ══════════════════════════════
+function gv(id) { return document.getElementById(id)?.value||''; }
+
+function nowStr() {
+  return new Date().toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+
+async function saveRecord() {
+  const date    = gv('w-date');
+  const equip   = gv('w-equip');
+  const content = gv('w-content');
+  if(!date)    return alert('날짜를 입력하세요.');
+  if(!equip)   return alert('장비명을 입력하세요.');
+  if(!content) return alert('작업내용을 입력하세요.');
+
+  const type   = gv('w-type');
+  const docno  = updateDocno();
+  const floor  = gv('w-floor');
+  const room   = gv('w-room');
+  const worker = gv('w-worker');
+  const vendor = gv('w-vendor');
+  const tel    = gv('w-tel');
+  const note   = gv('w-note');
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> 저장 중...';
+
+  const dbId = type==='점검' ? CHECK_DB_ID : REPAIR_DB_ID;
+
+  if (!dbId) {
+    // DB ID 없으면 로컬만 저장
+    const r = { id:Date.now(), docno, date, type, floor, room, equip, worker, vendor, tel, content, note, created:nowStr(), notionId:null };
+    localRecords.unshift(r);
+    localStorage.setItem('local_records', JSON.stringify(localRecords));
+    btn.disabled = false;
+    btn.innerHTML = '💾 노션에 저장';
+    document.getElementById('save-guide').style.display = 'block';
+    document.getElementById('save-guide').innerHTML = `✅ 로컬에 저장됨 (문서번호: ${docno})<br>⚠️ 노션 DB ID가 설정되지 않아 노션에는 저장되지 않았습니다.`;
+    clearForm(); updateDocno();
+    return;
+  }
+
+  try {
+    // 노션 속성 구성
+    const isCheck = type==='점검';
+    const props = {
+      [isCheck ? "점검항목" : "제목"]: { title: [{ text: { content: `${docno} ${equip} ${type}` } }] },
+      "문서번호": { rich_text: [{ text: { content: docno } }] },
+      [isCheck ? "점검일" : "접수일"]: { date: { start: date } },
+      "층":  floor  ? { select: { name: floor  } } : undefined,
+      "구역": room  ? { select: { name: room   } } : undefined,
+      "장비명": equip ? { select: { name: equip } } : undefined,
+      "담당업체": vendor ? { rich_text: [{ text: { content: vendor } }] } : undefined,
+      "전화번호": tel    ? { phone_number: tel }                           : undefined,
+      [isCheck ? "점검자" : "작업자"]: worker ? { rich_text: [{ text: { content: worker } }] } : undefined,
+      [isCheck ? "점검내용" : "고장내용"]: { rich_text: [{ text: { content: content } }] },
+      [isCheck ? "특이사항" : "조치내용"]: note ? { rich_text: [{ text: { content: note } }] } : undefined,
+      [isCheck ? "이상유무" : "처리상태"]: { select: { name: isCheck ? "✅ 정상" : "📥 접수" } },
+    };
+    // undefined 제거
+    Object.keys(props).forEach(k => { if(props[k]===undefined) delete props[k]; });
+
+    const result = await notionAPI('POST', '/pages', {
+      parent: { database_id: dbId },
+      properties: props,
+    });
+
+    const notionId = result.id;
+    const notionUrl = result.url;
+
+    // 로컬에도 저장
+    const r = { id:Date.now(), docno, date, type, floor, room, equip, worker, vendor, tel, content, note, created:nowStr(), notionId, notionUrl };
+    localRecords.unshift(r);
+    localStorage.setItem('local_records', JSON.stringify(localRecords));
+
+    btn.disabled = false;
+    btn.innerHTML = '💾 노션에 저장';
+    document.getElementById('save-guide').style.display = 'block';
+    document.getElementById('save-guide').innerHTML =
+      `✅ 노션에 저장 완료! (${docno})<br>
+       📱 노션 앱에서 확인하고 사진을 첨부하세요.<br>
+       <a href="${notionUrl}" target="_blank" style="color:var(--blue);font-weight:600">→ 노션에서 열기</a>`;
+    showToast('✅ 노션 저장 완료!');
+    clearForm(); updateDocno(); renderList();
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '💾 노션에 저장';
+    alert('노션 저장 실패: ' + e.message);
+  }
+}
+
+function clearForm() {
+  ['w-floor','w-room','w-equip','w-worker','w-vendor','w-tel','w-content','w-note'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+}
+
+// ══════════════════════════════
+// 목록 (로컬 캐시 기반)
+// ══════════════════════════════
+async function loadFromNotion() {
+  showToast('🔄 노션에서 불러오는 중...');
+  try {
+    const dbIds = [
+      { id: REPAIR_DB_ID, type: '수리' },
+      { id: CHECK_DB_ID,  type: '점검' },
+    ].filter(d => d.id);
+
+    let all = [];
+    for (const db of dbIds) {
+      const res = await notionAPI('POST', `/databases/${db.id}/query`, {
+        sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+        page_size: 100,
+      });
+      const items = (res.results || []).map(p => {
+        const props = p.properties;
+        const getText  = k => props[k]?.rich_text?.[0]?.text?.content || '';
+        const getTitle = k => props[k]?.title?.[0]?.text?.content     || '';
+        const getDate  = k => props[k]?.date?.start                    || '';
+        const getSel   = k => props[k]?.select?.name                   || '';
+        const getTel   = k => props[k]?.phone_number                   || '';
+        return {
+          id: p.id, notionId: p.id, notionUrl: p.url,
+          type:    db.type,
+          docno:   getText('문서번호'),
+          date:    getDate(db.type==='점검' ? '점검일' : '접수일'),
+          floor:   getSel('층'),
+          room:    getSel('구역'),
+          equip:   getSel('장비명'),
+          worker:  getText(db.type==='점검' ? '점검자' : '작업자'),
+          vendor:  getText('담당업체'),
+          tel:     getTel('전화번호'),
+          content: getText(db.type==='점검' ? '점검내용' : '고장내용'),
+          note:    getText(db.type==='점검' ? '특이사항' : '조치내용'),
+          status:  getSel(db.type==='점검' ? '이상유무' : '처리상태'),
+          created: p.created_time?.slice(0,10) || '',
+        };
+      });
+      all = all.concat(items);
+    }
+
+    // 날짜순 정렬
+    all.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+    localRecords = all;
+    localStorage.setItem('local_records', JSON.stringify(localRecords));
+    renderList();
+    showToast(`✅ ${all.length}건 불러옴`);
+  } catch(e) {
+    showToast('❌ 불러오기 실패: ' + e.message);
+  }
+}
+
+function renderList() {
+  const text = (document.getElementById('s-text')?.value||'').toLowerCase();
+  const type = document.getElementById('s-type')?.value||'';
+  let list = [...localRecords];
+  if(type) list = list.filter(r=>r.type===type);
+  if(text) list = list.filter(r=>JSON.stringify(r).toLowerCase().includes(text));
+
+  const total = localRecords.length;
+  const c   = localRecords.filter(r=>r.type==='점검').length;
+  const rep = localRecords.filter(r=>r.type==='수리').length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-box blue"><div class="stat-num">${total}</div><div class="stat-lbl">전체</div></div>
+    <div class="stat-box green"><div class="stat-num">${c}</div><div class="stat-lbl">📋 점검</div></div>
+    <div class="stat-box orange"><div class="stat-num">${rep}</div><div class="stat-lbl">🔧 수리</div></div>
+  `;
+
+  const el = document.getElementById('rec-list');
+  if(!list.length) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3)">기록이 없습니다<br><br><button class="btn btn-blue btn-sm" onclick="loadFromNotion()">🔄 노션에서 불러오기</button></div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(r=>{
+    const badge = r.type==='점검'
+      ? '<span class="badge badge-blue">📋 점검</span>'
+      : '<span class="badge badge-orange">🔧 수리</span>';
+    const statusBadge = r.status
+      ? `<span class="badge badge-gray">${r.status}</span>` : '';
+    const meta = [r.equip, r.worker, r.vendor, r.tel?'📞'+r.tel:''].filter(Boolean).join(' · ');
+    return `
+    <div class="rec-item">
+      <div class="rec-left">
+        <div class="rec-top">
+          ${badge}
+          <span class="rec-docno">${r.docno||'-'}</span>
+          <span class="rec-date">${r.date||''}</span>
+          ${r.floor?`<span class="badge badge-gray">${r.floor}</span>`:''}
+          ${statusBadge}
+        </div>
+        <div class="rec-meta">${meta}</div>
+        <div class="rec-content">${(r.content||'').slice(0,100)}${(r.content||'').length>100?'…':''}</div>
+        ${r.notionUrl?`<a href="${r.notionUrl}" target="_blank" style="font-size:11px;color:var(--blue);margin-top:4px;display:inline-block">📎 노션에서 열기 (사진 첨부)</a>`:''}
+      </div>
+      <div class="rec-actions">
+        <button class="btn btn-edit btn-sm" onclick="openEdit('${r.notionId||r.id}')">✏️</button>
+        <button class="btn btn-red btn-sm" onclick="delRecord('${r.notionId||r.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function delRecord(id) {
+  if(!confirm('삭제하시겠습니까?')) return;
+  try {
+    await notionAPI('PATCH', `/pages/${id}`, { archived: true });
+    localRecords = localRecords.filter(r=>(r.notionId||r.id)!=id);
+    localStorage.setItem('local_records', JSON.stringify(localRecords));
+    renderList();
+    showToast('🗑️ 삭제 완료');
+  } catch(e) {
+    localRecords = localRecords.filter(r=>(r.notionId||r.id)!=id);
+    localStorage.setItem('local_records', JSON.stringify(localRecords));
+    renderList();
+  }
+}
+
+// ══════════════════════════════
+// 수정
+// ══════════════════════════════
+function openEdit(id) {
+  const r = localRecords.find(x=>(x.notionId||x.id)==id);
+  if(!r) return;
+  editPageId = r.notionId || r.id;
+  const fOpts = '<option value="">선택</option>'+cfg.floors.map(v=>`<option${v===r.floor?' selected':''}>${v}</option>`).join('');
+  const rOpts = '<option value="">선택</option>'+cfg.rooms.map(v=>`<option${v===r.room?' selected':''}>${v}</option>`).join('');
+  const tOpts = ['점검','수리'].map(v=>`<option${v===r.type?' selected':''}>${v}</option>`).join('');
+  const esc = s=>(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-row t3">
+      <div class="fg"><label>날짜</label><input type="date" id="m-date" value="${r.date}"></div>
+      <div class="fg"><label>구분</label><select id="m-type">${tOpts}</select></div>
+      <div class="fg"><label>장비명</label><input type="text" id="m-equip" value="${esc(r.equip)}" list="equip-dl"></div>
+    </div>
+    <div class="form-row t3">
+      <div class="fg"><label>층</label><select id="m-floor">${fOpts}</select></div>
+      <div class="fg"><label>구역</label><select id="m-room">${rOpts}</select></div>
+      <div class="fg"><label>작업자</label><input type="text" id="m-worker" value="${esc(r.worker)}"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>업체명</label><input type="text" id="m-vendor" value="${esc(r.vendor)}" list="vendor-dl"></div>
+      <div class="fg"><label>전화번호</label><input type="tel" id="m-tel" value="${esc(r.tel||'')}"></div>
+    </div>
+    <div class="fg" style="margin-bottom:10px"><label>작업내용</label><textarea id="m-content">${esc(r.content)}</textarea></div>
+    <div class="fg"><label>특이사항</label><textarea id="m-note" style="min-height:60px">${esc(r.note)}</textarea></div>
+  `;
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+async function saveEdit() {
+  const r = localRecords.find(x=>(x.notionId||x.id)==editPageId);
+  if(!r) return;
+  const isCheck = (document.getElementById('m-type')?.value||r.type)==='점검';
+  const content = document.getElementById('m-content')?.value||'';
+  const note    = document.getElementById('m-note')?.value||'';
+  const worker  = document.getElementById('m-worker')?.value||'';
+  const vendor  = document.getElementById('m-vendor')?.value||'';
+  const tel     = document.getElementById('m-tel')?.value||'';
+  const floor   = document.getElementById('m-floor')?.value||'';
+  const room    = document.getElementById('m-room')?.value||'';
+
+  try {
+    const props = {};
+    if(floor)   props['층']   = { select: { name: floor } };
+    if(room)    props['구역'] = { select: { name: room  } };
+    if(vendor)  props['담당업체'] = { rich_text: [{ text: { content: vendor } }] };
+    if(tel)     props['전화번호'] = { phone_number: tel };
+    props[isCheck?'점검내용':'고장내용'] = { rich_text: [{ text: { content: content } }] };
+    props[isCheck?'특이사항':'조치내용'] = { rich_text: [{ text: { content: note    } }] };
+    props[isCheck?'점검자':'작업자']     = { rich_text: [{ text: { content: worker  } }] };
+
+    await notionAPI('PATCH', `/pages/${editPageId}`, { properties: props });
+
+    // 로컬 업데이트
+    Object.assign(r, { floor, room, worker, vendor, tel, content, note });
+    localStorage.setItem('local_records', JSON.stringify(localRecords));
+    closeModal(); renderList();
+    showToast('✅ 노션 업데이트 완료!');
+  } catch(e) {
+    closeModal(); renderList();
+    showToast('⚠️ 로컬만 업데이트됨');
+  }
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editPageId = null;
+}
+
+// ══════════════════════════════
+// 설정
+// ══════════════════════════════
+function addOpt(key, inputId) {
+  const val = document.getElementById(inputId).value.trim();
+  if(!val||cfg[key].includes(val)) return;
+  cfg[key].push(val);
+  document.getElementById(inputId).value='';
+  renderSettings(); fillSelects();
+}
+
+function delOpt(key, val) {
+  if(!confirm(`"${val}" 삭제?`)) return;
+  cfg[key].splice(cfg[key].indexOf(val),1);
+  renderSettings(); fillSelects();
+}
+
+function editOpt(key, old) {
+  const nv = prompt(`수정:`, old);
+  if(!nv||!nv.trim()||nv===old) return;
+  cfg[key][cfg[key].indexOf(old)] = nv.trim();
+  renderSettings(); fillSelects();
+}
+
+function addVendor() {
+  const name = document.getElementById('add-vname').value.trim();
+  const tel  = document.getElementById('add-vtel').value.trim();
+  if(!name) return;
+  cfg.vendors.push({name, tel});
+  document.getElementById('add-vname').value='';
+  document.getElementById('add-vtel').value='';
+  renderSettings(); fillSelects();
+}
+
+function delVendor(name) {
+  if(!confirm(`"${name}" 삭제?`)) return;
+  cfg.vendors = cfg.vendors.filter(v=>(v.name||v)!==name);
+  renderSettings(); fillSelects();
+}
+
+function saveSettings() {
+  localStorage.setItem('cfg', JSON.stringify(cfg));
+  showToast('✅ 설정 저장 완료!');
+}
+
+function renderSettings() {
+  const render = (tagId, key) => {
+    document.getElementById(tagId).innerHTML = cfg[key].map(v=>`
+      <span class="tag">
+        <span onclick="editOpt('${key}','${v}')" title="수정">✏️ ${v}</span>
+        <button onclick="delOpt('${key}','${v}')">×</button>
+      </span>`).join('');
+  };
+  render('floor-tags','floors');
+  render('room-tags','rooms');
+  render('equip-tags','equips');
+  document.getElementById('vendor-cards').innerHTML = cfg.vendors.length
+    ? cfg.vendors.map(v=>`
+      <div class="vendor-card">
+        <div>
+          <div class="vendor-name">🏢 ${v.name||v}</div>
+          ${(v.tel)?`<div class="vendor-tel">📞 ${v.tel}</div>`:''}
+        </div>
+        <button class="btn btn-red btn-sm" onclick="delVendor('${v.name||v}')">🗑️</button>
+      </div>`).join('')
+    : '<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px">등록된 업체가 없습니다</div>';
+}
+
+// ══════════════════════════════
+// 토스트
+// ══════════════════════════════
+function showToast(msg) {
+  const old = document.getElementById('_t');
+  if(old) old.remove();
+  const t = document.createElement('div');
+  t.id='_t'; t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{ if(t.parentElement) t.remove(); }, 3000);
+}
+
+// ══════════════════════════════
+// 초기화
+// ══════════════════════════════
+document.getElementById('w-date').value = new Date().toISOString().slice(0,10);
+fillSelects();
+updateDocno();
+renderSettings();
+renderList();
+checkNotion();
+document.getElementById('edit-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
+</script>
+</body>
+</html>
