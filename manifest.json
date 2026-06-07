@@ -1,0 +1,25 @@
+{
+  "name": "시설관리",
+  "short_name": "시설관리",
+  "description": "시설 위치 및 점검 이력 관리",
+  "start_url": "/sisel-gwanri/",
+  "scope": "/sisel-gwanri/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
