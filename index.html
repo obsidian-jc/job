@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>지하주차장 좌표 메모 앱</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-floor="4f">지하4층</button>
+    <button class="tab" data-floor="3f">지하3층</button>
+    <button class="tab" data-floor="2f">지하2층</button>
+  </div>
+  <div class="searchrow">
+    <input type="text" id="searchInput" placeholder="번호/메모 검색">
+    <button class="btn primary" id="searchBtn">검색</button>
+  </div>
+  <div class="modebar" id="modebar">
+    <button class="modebtn active" data-mode="view">보기</button>
+    <button class="modebtn" data-mode="add">지점 추가</button>
+    <button class="modebtn" data-mode="edit">메모 수정</button>
+    <button class="modebtn" data-mode="delete">지점 삭제</button>
+  </div>
+</div>
+
+<div class="stats" id="statsBar">로딩 중...</div>
+
+<div class="stage-wrap" id="stageWrap">
+  <div class="stage" id="stage">
+    <img id="floorImg" src="" alt="주차장 평면도">
+  </div>
+</div>
+
+<div class="hint" id="hintBar">지점을 탭하면 메모를 볼 수 있습니다.</div>
+
+<div class="iobar">
+  <button class="btn" id="exportBtn">내보내기</button>
+  <button class="btn" id="importBtn">불러오기</button>
+  <input type="file" id="fileInput" accept=".json">
+</div>
+
+<div id="sheetRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
