@@ -111,11 +111,12 @@ html, body {
 }
 .stage {
   position: relative;
-  width: 2400px;
+  display: inline-block;
 }
 .stage img {
   display: block;
-  width: 100%;
+  width: 1400px;
+  max-width: none;
   height: auto;
   user-select: none;
   -webkit-user-drag: none;
