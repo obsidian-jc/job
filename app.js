@@ -34,7 +34,7 @@
   }
 
   function fetchFloorData(floor) {
-    return fetch('data/' + floor + '.json', { cache: 'no-store' })
+    return fetch(floor + '.json', { cache: 'no-store' })
       .then(function (res) {
         if (!res.ok) throw new Error('not found');
         return res.json();
@@ -71,7 +71,7 @@
   }
 
   function renderFloorImage() {
-    document.getElementById('floorImg').src = 'images/' + state.floor + '.jpg';
+    document.getElementById('floorImg').src = state.floor + '.jpg';
   }
 
   function renderStats() {
